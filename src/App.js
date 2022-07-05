@@ -1,24 +1,40 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useContext } from "react";
+import { Switch, Route } from "react-router-dom";
+import { QueryClientProvider, QueryClient } from "react-query";
+import AuthContext from "./store/AuthContext";
+import { ThemeProvider } from "@mui/material/styles";
+import Navbar from "./components/navbar/Navbar";
+import { theme } from "./themes/Core";
+import Home from "./Pages/Home/Home";
+import Register from "./Pages/Authentication/Register";
+import Login from "./Pages/Authentication/Login";
+import AddUser from "./Pages/Users/AddUser";
+import ContactChat from "./Pages/Users/ContactChat/ContactChat";
+import SocketProvider from "./store/SocketProvider";
+import "./App.css";
 
 function App() {
+  const authCtx = useContext(AuthContext);
+
+  const queryClient = new QueryClient();
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <SocketProvider>
+        <ThemeProvider theme={theme}>
+          <div className="App">
+            <Navbar />
+            <Switch>
+              <Route exact path="/" component={authCtx.token ? Home : Login} />
+              <Route exact path="/register" component={Register} />
+              <Route exact path="/login" component={Login} />
+              <Route exact path="/add-user" component={AddUser} />
+              <Route exact path="/contact/:id" component={ContactChat} />
+            </Switch>
+          </div>
+        </ThemeProvider>
+      </SocketProvider>
+    </QueryClientProvider>
   );
 }
 
