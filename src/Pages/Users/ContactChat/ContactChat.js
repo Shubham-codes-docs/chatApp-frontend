@@ -4,6 +4,7 @@ import ChatContext from "../../../store/ChatContext";
 import SocketContext from "../../../store/SocketContext";
 import InputField from "../../../components/inputField/InputField";
 import Messages from "../../../components/messages/Messages";
+import UserNavbar from "../../../components/navbar/UserNavbar";
 import { InputWrapper, OuterWrapper } from "./ContactChatStyle";
 
 const ContactChat = () => {
@@ -12,42 +13,73 @@ const ContactChat = () => {
 
   const [messages, setMessages] = useState([]);
   useEffect(() => {
-    socketCtx.socket.emit("get-private-messages");
-    socketCtx.socket.on("get-private-messages", ({ messages }) => {
-      let Allmessages = messages
-        ? messages.map((msg) => {
-            return {
-              id: msg._id,
-              content: msg.content,
-              sentTime: msg.sentAt,
-              from: msg.from,
-              to: msg.to,
-              sent:
-                msg.from === JSON.parse(localStorage.getItem("user"))
-                  ? true
-                  : false,
-              receivedTime: msg.sentAt,
-              createdAt: msg.createdAt,
-              messageStatus: msg.messageStatus,
-            };
-          })
-        : [];
-      setMessages(Allmessages);
+    if (chatCtx.contact.admins) {
+      socketCtx.socket.emit("get-group-messages");
+      socketCtx.socket.on("get-group-messages", ({ messages }) => {
+        let Allmessages = messages
+          ? messages.map((msg) => {
+              return {
+                id: msg._id,
+                content: msg.content,
+                sentTime: msg.sentAt,
+                from: msg.from,
+                to: msg.to,
+                sent:
+                  msg.from === JSON.parse(localStorage.getItem("user"))
+                    ? true
+                    : false,
+                receivedTime: msg.sentAt,
+                createdAt: msg.createdAt,
+                messageStatus: msg.messageStatus,
+              };
+            })
+          : [];
+        setMessages(Allmessages);
 
-      return () => {
-        setMessages([]);
-        socketCtx.socket.off("get-private-messages");
-        socketCtx.socket.off("handleStatusChange");
-      };
-    });
-  }, []);
+        return () => {
+          setMessages([]);
+          socketCtx.socket.off("get-private-messages");
+          socketCtx.socket.off("handleStatusChange");
+        };
+      });
+    } else {
+      socketCtx.socket.emit("get-private-messages");
+      socketCtx.socket.on("get-private-messages", ({ messages }) => {
+        let Allmessages = messages
+          ? messages.map((msg) => {
+              return {
+                id: msg._id,
+                content: msg.content,
+                sentTime: msg.sentAt,
+                from: msg.from,
+                to: msg.to,
+                sent:
+                  msg.from === JSON.parse(localStorage.getItem("user"))
+                    ? true
+                    : false,
+                receivedTime: msg.sentAt,
+                createdAt: msg.createdAt,
+                messageStatus: msg.messageStatus,
+              };
+            })
+          : [];
+        setMessages(Allmessages);
+
+        return () => {
+          setMessages([]);
+          socketCtx.socket.off("get-private-messages");
+          socketCtx.socket.off("handleStatusChange");
+        };
+      });
+    }
+  }, [socketCtx.socket, chatCtx.contact]);
 
   useEffect(() => {
     socketCtx.socket.emit("handleStatusChange", {
       id: chatCtx.contact._id,
       message: "read",
     });
-  }, [chatCtx.contact]);
+  }, [chatCtx.contact, socketCtx.socket]);
 
   const changeMsgHandler = async (e) => {
     e.preventDefault();
@@ -58,6 +90,7 @@ const ContactChat = () => {
       to: chatCtx.contact._id,
       createdAt: new Date(),
       messageStatus: "sending",
+      groupId: chatCtx.contact.participants ? chatCtx.contact._id : "",
     };
 
     setMessages((prevState) => [...prevState, message]);
@@ -74,21 +107,11 @@ const ContactChat = () => {
   socketCtx.socket
     .off("handleMessageStatus")
     .on("handleMessageStatus", ({ id, messageStatus, to }) => {
-      console.log(messageStatus);
       let changedMessages = [];
       changedMessages = messages.map((msg) => {
         if (to === msg.to) {
           msg._id = !msg._id ? id : msg._id;
           msg.messageStatus =
-            // msg.messageStatus === "sending"
-            //   ? messageStatus
-            //   : msg.messageStatus === "sent"
-            //   ? messageStatus
-            //   : messageStatus === "delivered" &&
-            //     msg.messageStatus !== "delivered"
-            //   ? messageStatus
-            //   : msg.messageStatus;
-
             messageStatus === "read" && msg.messageStatus !== "read"
               ? messageStatus
               : messageStatus === "delivered" &&
@@ -106,29 +129,34 @@ const ContactChat = () => {
 
   socketCtx.socket
     .off("private-message")
-    .on("private-message", ({ content, from, sentTime, messageStatus }) => {
-      let status = messageStatus;
-      if (from === chatCtx.contact._id) {
-        status = "read";
-        socketCtx.socket.emit("handleStatusChange", {
-          id: chatCtx.contact._id,
-          message: "read",
-        });
+    .on(
+      "private-message",
+      ({ content, from, sentTime, messageStatus, groupId }) => {
+        let status = messageStatus;
+        if (from === chatCtx.contact._id) {
+          status = "read";
+          socketCtx.socket.emit("handleStatusChange", {
+            id: chatCtx.contact._id,
+            message: "read",
+          });
+        }
+        let message = {
+          content,
+          receivedTime: sentTime,
+          from,
+          createdAt: new Date(),
+          messageStatus: status,
+          groupId,
+        };
+        console.log(message);
+        const newMessages = [...messages, message];
+        setMessages(newMessages);
       }
-      let message = {
-        content,
-        receivedTime: sentTime,
-        from,
-        createdAt: new Date(),
-        messageStatus: status,
-      };
-      setMessages((prevState) => [...prevState, message]);
-    });
-
-  console.log(messages);
+    );
 
   return chatCtx.contact.name ? (
     <>
+      <UserNavbar contact={chatCtx.contact} />
       <form onSubmit={changeMsgHandler}>
         <OuterWrapper>
           <Messages messages={messages} />

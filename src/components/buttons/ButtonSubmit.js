@@ -1,6 +1,6 @@
 import React from "react";
 import Button from "@mui/material/Button";
-const ButtonSubmit = ({text}) => {
+const ButtonSubmit = ({ text, clickHandler, children }) => {
   return (
     <div
       style={{
@@ -10,8 +10,13 @@ const ButtonSubmit = ({text}) => {
         padding: "5px",
       }}
     >
-      <Button variant="outlined" type="submit">
+      <Button
+        variant="outlined"
+        type="submit"
+        onClick={clickHandler && clickHandler}
+      >
         {text}
+        {children && children}
       </Button>
     </div>
   );

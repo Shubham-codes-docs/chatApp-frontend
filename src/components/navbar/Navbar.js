@@ -1,32 +1,44 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import Menu from "@mui/material/Menu";
+import {
+  Button,
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Typography,
+  Menu,
+  Container,
+  Avatar,
+  Tooltip,
+  MenuItem,
+} from "@mui/material";
+
 import MenuIcon from "@mui/icons-material/Menu";
-import Container from "@mui/material/Container";
-import Avatar from "@mui/material/Avatar";
-import Button from "@mui/material/Button";
-import Tooltip from "@mui/material/Tooltip";
-import MenuItem from "@mui/material/MenuItem";
+import AddMembers from "../modals/AddMembers";
 
 const Navbar = () => {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
+  const [modalShow, setModalShow] = useState(false);
 
   const pages = [
     {
       id: 1,
       path: "/add-user",
       text: "Add Contact",
+      type: "link",
     },
     {
       id: 2,
       path: "/",
       text: "Status",
+      type: "link",
+    },
+    {
+      id: 3,
+      text: "Create Group",
+      type: "button",
     },
   ];
   const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -46,8 +58,17 @@ const Navbar = () => {
     setAnchorElUser(null);
   };
 
+  const openModal = () => {
+    setModalShow(true);
+  };
+
+  const closeModal = (value) => {
+    setModalShow(value);
+  };
+
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ marginBottom: "10px" }}>
+      <AddMembers isOpen={modalShow} closeModal={closeModal} />
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Typography
@@ -90,9 +111,19 @@ const Navbar = () => {
             >
               {pages.map((page) => (
                 <MenuItem key={page.id} onClick={handleCloseNavMenu}>
-                  <NavLink to={page.path}>
-                    <Typography textAlign="center">{page.text}</Typography>
-                  </NavLink>
+                  {page.type !== "button" ? (
+                    <NavLink to={page.path}>
+                      <Typography textAlign="center">{page.text}</Typography>
+                    </NavLink>
+                  ) : (
+                    <Button
+                      sx={{ color: "#000" }}
+                      variant="filled"
+                      onClick={openModal}
+                    >
+                      {page.text}
+                    </Button>
+                  )}
                 </MenuItem>
               ))}
             </Menu>
@@ -112,7 +143,19 @@ const Navbar = () => {
                 onClick={handleCloseNavMenu}
                 sx={{ my: 2, color: "white", display: "block" }}
               >
-                <NavLink to={page.path}>{page.text}</NavLink>
+                {page.type !== "button" ? (
+                  <NavLink to={page.path}>
+                    <Typography textAlign="center">{page.text}</Typography>
+                  </NavLink>
+                ) : (
+                  <Button
+                    variant="filled"
+                    sx={{ color: "#000" }}
+                    onClick={openModal}
+                  >
+                    {page.text}
+                  </Button>
+                )}
               </Button>
             ))}
           </Box>

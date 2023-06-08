@@ -21,7 +21,8 @@ const Messages = ({ messages }) => {
           : null;
         if (
           message.to === chatCtx.contact._id ||
-          message.from === chatCtx.contact._id
+          message.from === chatCtx.contact._id ||
+          message.groupId === chatCtx.contact._id
         ) {
           return (
             <React.Fragment key={`${message.content}-${uuid()}`}>
